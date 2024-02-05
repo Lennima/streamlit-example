@@ -1,40 +1,115 @@
-import altair as alt
-import numpy as np
 import pandas as pd
+import seaborn as sns
 import streamlit as st
+from matplotlib import pyplot as plt
 
-"""
-# Welcome to Streamlit!
+st.markdown("""
+            
+            # Dashboard: Data Science und Visualisierung
+            
+            Willkommen zu meinem Dashboard auf dem ich im Rahmen meines Studiums im Kurs Data Science und Visualisierung versuche Fragen zu einem Datensatz von Capital BikeShare mithilfe von Diagrammen zu beantworten.
+            Über die fünf unterschiedlichen Tabs kann man zwischen den einzelnen Grafiken wechseln, die zugehörige Frage steht jeweils darüber.
+            """)
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+dateiname = "/Users/lenna/Desktop/Fresenius/Sem 5/Data VIsualisierung/01_Prüfungsleisttung/capitalbikeshare-complete.csv"
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+df = pd.read_csv(
+    dateiname,
+    sep=","
+    )
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Balkendiagramm", "Balkendiagramm", "Kreisdiagramm", "Streudiagramm", "Liniendiagramm"])
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+with tab1:
+    st.write("# Wie oft treten die unterschiedlichen Wetterbedingungen auf?")
+    
+    weather_count = df['weather_main'].value_counts()
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+    weather_count_df = weather_count.reset_index()
+    weather_count_df.columns = ['weather_main', 'weather_count']
+    
+    fig = plt.figure()
+    sns.barplot(
+        data=weather_count_df,
+        x="weather_count",
+        y="weather_main",
+        estimator="sum",
+        errorbar=None,
+        )
+    
+    plt.xlabel('Anzahl')
+    plt.ylabel('Wetterbedingung')
+    
+    st.pyplot(fig)
+    
+with tab2:
+    st.write("# Bei welchen Wetterbedingungen wurden die meisten Fahrräder ausgeliehen?")
+    
+    df_renamed = df.rename(columns={'count': 'Anzahl der ausgeliehenen Räder pro Stunde', 'weather_main': 'Wetterbedingung'})
+    
+    st.bar_chart(
+        data=df_renamed,
+        x="Anzahl der ausgeliehenen Räder pro Stunde",
+        y="Wetterbedingung",
+        width=0, height=500,
+        use_container_width=True,
+        )
+    
+with tab3:
+    st.write("# Werden am Wochenende oder an Werktagen mehr Fahrräder ausgeliehen?")
+    
+    count_by_workday = df.groupby('workingday')['count'].sum()
+    
+    custom_labels = count_by_workday.index.map({0: 'Wochenende', 1: 'Werktag'})
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+    fig = plt.figure()
+    wedges, _, autotexts = plt.pie(count_by_workday, labels=custom_labels, colors=['#8eb7e5', '#6e8660'], autopct='', startangle=90)
+    plt.title('Anzahl ausgeliehener Leihräder an Werktagen und Wochenenden')
+    plt.axis('equal')
+    
+    for i, autotext in enumerate(autotexts):
+        autotext.set_text(f'{count_by_workday.values[i]}')
+        autotext.set_color('white')
+        
+    total_count = count_by_workday.sum()
+    
+    st.pyplot(fig)
+    
+    
+with tab4:
+    st.write("# Wie verhällt sich die gemessene Temperatur gegenüber der geschätzten Temperatur?")
+    
+    fig = plt.figure(figsize=(5, 5))
+    sns.scatterplot(
+        data=df,
+        x="temp",
+        y="feels_like",
+        color="#6e8660"
+        )
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+    plt.xlabel('Temperatur in °C')
+    plt.ylabel('gefühlte Temperatur in °C:')
+    
+    st.pyplot(fig)
+
+with tab5:
+    st.write("# In welchen Monaten werden die meisten Fahrräder ausgeliehen?")
+    
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    df.set_index('datetime', inplace=True)
+    
+    df_resampled = df.resample('M').sum()
+    
+    fig = plt.figure(figsize=(12, 6))
+    sns.lineplot(data=df_resampled, x=df_resampled.index, y="count")
+    
+    plt.xlabel('Datum')
+    plt.ylabel('Anzahl Leihräder')
+    plt.title('Verliehene Fahrräder pro Monat')
+    
+    plt.xticks(df_resampled.index, df_resampled.index.strftime('%Y-%m'), rotation=45)
+    
+    for date in df_resampled.index:
+       plt.vlines(date, 0, df_resampled.loc[date, 'count'], color='gray', linestyle='--', alpha=0.5)
+    
+    st.pyplot(fig)
