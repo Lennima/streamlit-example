@@ -11,10 +11,8 @@ st.markdown("""
             Über die fünf unterschiedlichen Tabs kann man zwischen den einzelnen Grafiken wechseln, die zugehörige Frage steht jeweils darüber.
             """)
 
-dateiname = "/Users/lenna/Desktop/Fresenius/Sem 5/Data VIsualisierung/01_Prüfungsleisttung/capitalbikeshare-complete.csv"
-
 df = pd.read_csv(
-    dateiname,
+    "capitalbikeshare-complete.csv",
     sep=","
     )
 
