@@ -38,9 +38,6 @@ with tab1:
     plt.xlabel('Anzahl')
     plt.ylabel('Wetterbedingung')
             
-for index, row in weather_count_df.iterrows():
-            plt.text(row['weather_count'], index, str(row['weather_count']), va='center')
-    
     st.pyplot(fig)
     
 with tab2:
